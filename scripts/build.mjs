@@ -29,7 +29,7 @@ const site = {
     { label: "文章", href: "/#posts" },
     { label: "分类", href: "/tags/" },
     { label: "X", href: "https://x.com/", external: true },
-    { label: "关于", href: "/about/" },
+    { label: "GitHub", href: "https://github.com/Henry0620-tuzi/wenzhang", external: true },
   ],
   highlights: [
     { label: "主题", value: "随笔与项目" },
@@ -280,10 +280,10 @@ function createLayout({ title, description, content }) {
                 `<a href="${link.external ? escapeHtml(link.href) : withBase(link.href)}"${link.external ? ' target="_blank" rel="noreferrer"' : ""}>${escapeHtml(link.label)}</a>`
               )
               .join("")}
+            <a href="${withBase("/about/")}">关于</a>
             <a class="nav-avatar" href="${withBase("/about/")}" aria-label="头像入口">
               <img src="${withBase(site.avatarUrl)}" alt="${escapeHtml(site.author)} 的头像" />
             </a>
-            <a href="${escapeHtml(site.githubUrl)}" target="_blank" rel="noreferrer">GitHub</a>
           </nav>
         </header>
         ${content}

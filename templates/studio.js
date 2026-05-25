@@ -8,6 +8,12 @@ const previewTags = document.getElementById("preview-tags");
 const previewBody = document.getElementById("preview-body");
 const copyButton = document.getElementById("copy-markdown");
 const downloadButton = document.getElementById("download-markdown");
+const gate = document.getElementById("admin-gate");
+const studioShell = document.getElementById("studio-shell");
+const gatePassword = document.getElementById("gate-password");
+const gateEnter = document.getElementById("gate-enter");
+const STUDIO_PASSWORD = "binbin2026";
+const STUDIO_STORAGE_KEY = "binbin-studio-unlocked";
 
 function escapeHtml(value) {
   return value
@@ -158,6 +164,37 @@ function updatePreview() {
   element.addEventListener("input", updatePreview);
 });
 
+function unlockStudio(remember = true) {
+  gate.style.display = "none";
+  studioShell.classList.remove("is-locked");
+  if (remember) {
+    localStorage.setItem(STUDIO_STORAGE_KEY, "yes");
+  }
+}
+
+function handleGate() {
+  if (localStorage.getItem(STUDIO_STORAGE_KEY) === "yes") {
+    unlockStudio(false);
+    return;
+  }
+
+  gateEnter.addEventListener("click", () => {
+    if (gatePassword.value === STUDIO_PASSWORD) {
+      unlockStudio(true);
+      return;
+    }
+    gatePassword.value = "";
+    gatePassword.placeholder = "口令不对，请重试";
+  });
+
+  gatePassword.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      gateEnter.click();
+    }
+  });
+}
+
 copyButton.addEventListener("click", async () => {
   const content = buildMarkdown();
   await navigator.clipboard.writeText(content);
@@ -180,4 +217,5 @@ downloadButton.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
+handleGate();
 updatePreview();

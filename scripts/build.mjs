@@ -20,7 +20,6 @@ const site = {
   email: "hello@example.com",
   links: [
     { label: "首页", href: "/" },
-    { label: "写作台", href: "/studio/" },
     { label: "关于", href: "/about/" },
     { label: "分类", href: "/tags/" },
   ],
@@ -549,7 +548,24 @@ function renderStudio() {
   return createLayout({
     title: `写作台 | ${site.title}`,
     description: "在网页里直接写文章、实时预览，并导出 Markdown 模板。",
-    content: `<section class="page-hero">
+    content: `<section class="admin-gate" id="admin-gate">
+  <div class="admin-gate-card">
+    <p class="eyebrow">Private Studio</p>
+    <h1>写作后台</h1>
+    <p class="hero-copy">这是你的私人写作入口。输入口令后才能进入写作台。</p>
+    <label class="studio-field">
+      <span>后台口令</span>
+      <input id="gate-password" type="password" placeholder="请输入后台口令" />
+    </label>
+    <div class="studio-actions">
+      <button class="button button-primary" type="button" id="gate-enter">进入后台</button>
+    </div>
+    <p class="studio-hint">当前是轻量保护版本，适合隐藏后台入口，不等于真正服务端安全认证。</p>
+  </div>
+</section>
+
+<section class="studio-shell is-locked" id="studio-shell">
+<section class="page-hero">
   <p class="eyebrow">Writing Studio</p>
   <h1>在网页里直接开始写。</h1>
   <p class="hero-copy">你可以先在这里写标题、摘要、标签和正文，右侧会实时预览文章效果，还可以一键导出 Markdown 文件内容。</p>
@@ -603,6 +619,7 @@ function renderStudio() {
     </div>
     <div class="article-content" id="preview-body"></div>
   </section>
+</section>
 </section>
 
 <script src="${withBase("/studio.js")}"></script>`,

@@ -268,6 +268,33 @@ pre {
   align-items: start;
 }
 
+.studio-shell.is-locked {
+  display: none;
+}
+
+.admin-gate {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+}
+
+.admin-gate-card {
+  width: min(100%, 34rem);
+  backdrop-filter: blur(10px);
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow);
+  border-radius: 1.8rem;
+  padding: 1.5rem;
+}
+
+.admin-gate-card h1 {
+  margin: 0;
+  font-family: "Fraunces", "Noto Serif SC", serif;
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  line-height: 1;
+}
+
 .about-card,
 .tag-card {
   border-radius: 1.4rem;

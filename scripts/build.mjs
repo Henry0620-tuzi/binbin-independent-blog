@@ -7,6 +7,7 @@ const distDir = path.join(root, "dist");
 const postsDir = path.join(distDir, "posts");
 const tagsDir = path.join(distDir, "tags");
 const templateCssPath = path.join(root, "templates", "site.css");
+const basePath = process.env.SITE_BASE_PATH || "/";
 
 const site = {
   title: "你的独立写作站",
@@ -27,6 +28,29 @@ const site = {
     { label: "发布", value: "自由可控" },
   ],
 };
+
+function normalizeBasePath(value) {
+  if (!value || value === "/") {
+    return "/";
+  }
+  const trimmed = `/${value.replace(/^\/+|\/+$/g, "")}/`;
+  return trimmed;
+}
+
+const siteBase = normalizeBasePath(basePath);
+
+function withBase(pathname) {
+  if (!pathname.startsWith("/")) {
+    throw new Error(`路径必须以 / 开头: ${pathname}`);
+  }
+  if (siteBase === "/") {
+    return pathname;
+  }
+  if (pathname === "/") {
+    return siteBase;
+  }
+  return `${siteBase}${pathname.slice(1)}`;
+}
 
 async function ensureCleanDir(dir) {
   await fs.rm(dir, { recursive: true, force: true });
@@ -224,7 +248,7 @@ function createLayout({ title, description, content }) {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;700;800&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="${withBase("/site.css")}" />
     <title>${escapeHtml(title)}</title>
   </head>
   <body>
@@ -233,7 +257,7 @@ function createLayout({ title, description, content }) {
       <div class="page-glow page-glow-right"></div>
       <main class="site-frame">
         <header class="topbar">
-          <a class="brand" href="/">
+          <a class="brand" href="${withBase("/")}">
             <span class="brand-mark">${escapeHtml(site.author.slice(0, 2))}</span>
             <span class="brand-copy">
               <strong>${escapeHtml(site.author)}</strong>
@@ -242,7 +266,7 @@ function createLayout({ title, description, content }) {
           </a>
           <nav class="topnav" aria-label="主导航">
             ${site.links
-              .map((link) => `<a href="${link.href}">${escapeHtml(link.label)}</a>`)
+              .map((link) => `<a href="${withBase(link.href)}">${escapeHtml(link.label)}</a>`)
               .join("")}
           </nav>
         </header>
@@ -325,7 +349,7 @@ function renderHome(posts) {
   const featured = posts[0];
   const cards = posts
     .map(
-      (post) => `<a class="post-card" href="/posts/${post.slug}/">
+      (post) => `<a class="post-card" href="${withBase(`/posts/${post.slug}/`)}">
   <div class="post-card-meta">
     <time datetime="${escapeHtml(post.date)}">${formatDate(post.date)}</time>
     ${post.tags.length > 0 ? `<span>${escapeHtml(post.tags.join(" / "))}</span>` : ""}
@@ -348,7 +372,7 @@ function renderHome(posts) {
     </p>
     <div class="hero-actions">
       <a class="button button-primary" href="#posts">查看文章</a>
-      <a class="button button-secondary" href="/about/">认识我</a>
+      <a class="button button-secondary" href="${withBase("/about/")}">认识我</a>
     </div>
   </div>
   <aside class="hero-panel">
@@ -386,7 +410,7 @@ function renderHome(posts) {
   <p class="eyebrow">Featured</p>
   <h2>${escapeHtml(featured?.title || "暂时还没有文章")}</h2>
   <p>${escapeHtml(featured?.description || "等你发布第一篇文章后，这里会自动成为重点推荐。")}</p>
-  ${featured ? `<a class="featured-link" href="/posts/${featured.slug}/">阅读最新文章</a>` : ""}
+  ${featured ? `<a class="featured-link" href="${withBase(`/posts/${featured.slug}/`)}">阅读最新文章</a>` : ""}
 </section>
 
 <section class="posts-section" id="posts">
@@ -406,7 +430,7 @@ function renderPost(post) {
     title: `${post.title} | 你的独立写作站`,
     description: post.description,
     content: `<article class="article-shell">
-  <a class="back-link" href="/">返回首页</a>
+  <a class="back-link" href="${withBase("/")}">返回首页</a>
   <header class="article-header">
     <p class="eyebrow">Essay</p>
     <h1>${escapeHtml(post.title)}</h1>
@@ -467,7 +491,7 @@ function renderAbout(posts, tags) {
 function renderTagsIndex(tags) {
   const items = tags
     .map(
-      (tag) => `<a class="tag-card" href="/tags/${tag.slug}/">
+      (tag) => `<a class="tag-card" href="${withBase(`/tags/${tag.slug}/`)}">
   <strong>${escapeHtml(tag.tag)}</strong>
   <span>${tag.count} 篇文章</span>
 </a>`
@@ -492,7 +516,7 @@ function renderTagsIndex(tags) {
 function renderTagPage(tag) {
   const cards = tag.posts
     .map(
-      (post) => `<a class="post-card" href="/posts/${post.slug}/">
+      (post) => `<a class="post-card" href="${withBase(`/posts/${post.slug}/`)}">
   <div class="post-card-meta">
     <time datetime="${escapeHtml(post.date)}">${formatDate(post.date)}</time>
   </div>
@@ -525,6 +549,7 @@ async function main() {
   await fs.mkdir(tagsDir, { recursive: true });
   const css = await fs.readFile(templateCssPath, "utf8");
   await fs.writeFile(path.join(distDir, "site.css"), css, "utf8");
+  await fs.writeFile(path.join(distDir, ".nojekyll"), "", "utf8");
 
   const posts = await loadPosts();
   const tags = groupTags(posts);

@@ -20,11 +20,13 @@ const site = {
   location: "中国 / 线上",
   email: "q343553497@gmail.com",
   xUrl: "https://x.com/",
+  githubUrl: "https://github.com/Henry0620-tuzi/wenzhang",
   links: [
     { label: "首页", href: "/" },
     { label: "关于", href: "/about/" },
     { label: "分类", href: "/tags/" },
     { label: "X", href: "https://x.com/", external: true },
+    { label: "GitHub", href: "https://github.com/Henry0620-tuzi/wenzhang", external: true },
   ],
   highlights: [
     { label: "写作", value: "Markdown" },

@@ -9,6 +9,7 @@ const tagsDir = path.join(distDir, "tags");
 const templateCssPath = path.join(root, "templates", "site.css");
 const studioScriptPath = path.join(root, "templates", "studio.js");
 const viewsScriptPath = path.join(root, "templates", "views.js");
+const avatarPlaceholderPath = path.join(root, "templates", "avatar-placeholder.svg");
 const basePath = process.env.SITE_BASE_PATH || "/";
 
 const site = {
@@ -21,6 +22,7 @@ const site = {
   email: "q343553497@gmail.com",
   xUrl: "https://x.com/",
   githubUrl: "https://github.com/Henry0620-tuzi/wenzhang",
+  avatarUrl: "/avatar-placeholder.svg",
   links: [
     { label: "首页", href: "/" },
     { label: "关于", href: "/about/" },
@@ -277,6 +279,9 @@ function createLayout({ title, description, content }) {
                 `<a href="${link.external ? escapeHtml(link.href) : withBase(link.href)}"${link.external ? ' target="_blank" rel="noreferrer"' : ""}>${escapeHtml(link.label)}</a>`
               )
               .join("")}
+            <a class="nav-avatar" href="${withBase("/about/")}" aria-label="头像入口">
+              <img src="${withBase(site.avatarUrl)}" alt="${escapeHtml(site.author)} 的头像" />
+            </a>
           </nav>
         </header>
         ${content}
@@ -675,9 +680,11 @@ async function main() {
   const css = await fs.readFile(templateCssPath, "utf8");
   const studioScript = await fs.readFile(studioScriptPath, "utf8");
   const viewsScript = await fs.readFile(viewsScriptPath, "utf8");
+  const avatarPlaceholder = await fs.readFile(avatarPlaceholderPath, "utf8");
   await fs.writeFile(path.join(distDir, "site.css"), css, "utf8");
   await fs.writeFile(path.join(distDir, "studio.js"), studioScript, "utf8");
   await fs.writeFile(path.join(distDir, "views.js"), viewsScript, "utf8");
+  await fs.writeFile(path.join(distDir, "avatar-placeholder.svg"), avatarPlaceholder, "utf8");
   await fs.writeFile(path.join(distDir, ".nojekyll"), "", "utf8");
 
   const posts = await loadPosts();

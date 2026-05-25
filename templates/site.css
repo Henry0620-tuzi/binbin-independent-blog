@@ -208,11 +208,30 @@ pre {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .topnav a {
   padding: 0.45rem 0.7rem;
   border-radius: 999px;
+}
+
+.nav-avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 23, 15, 0.12);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 10px 30px rgba(84, 48, 25, 0.12);
+}
+
+.nav-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .topnav a:hover,

@@ -29,9 +29,9 @@ const site = {
     { label: "GitHub", href: "https://github.com/Henry0620-tuzi/wenzhang", external: true },
   ],
   highlights: [
-    { label: "写作", value: "Markdown" },
-    { label: "部署", value: "静态站" },
-    { label: "发布", value: "自由可控" },
+    { label: "主题", value: "随笔与项目" },
+    { label: "更新", value: "长期写作" },
+    { label: "联系", value: "邮箱与社交" },
   ],
 };
 

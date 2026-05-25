@@ -105,6 +105,7 @@ pre {
 .hero-copy-block,
 .hero-panel,
 .featured-card,
+.contact-showcase article,
 .page-hero,
 .about-card,
 .timeline-card,
@@ -223,6 +224,68 @@ pre {
   border-radius: 1.6rem;
   padding: 1.4rem;
   margin-bottom: 2rem;
+}
+
+.contact-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.qr-card,
+.x-card {
+  border-radius: 1.6rem;
+  padding: 1.3rem;
+}
+
+.qr-card {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+.qr-placeholder {
+  aspect-ratio: 1 / 1;
+  border-radius: 1.3rem;
+  background:
+    linear-gradient(135deg, rgba(36, 26, 19, 0.08), rgba(180, 87, 47, 0.15)),
+    #fffaf3;
+  border: 1px dashed rgba(34, 23, 15, 0.18);
+  display: grid;
+  place-items: center;
+}
+
+.qr-grid {
+  width: 72%;
+  height: 72%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.45rem;
+}
+
+.qr-grid span {
+  display: block;
+  border-radius: 0.35rem;
+  background: #241a13;
+}
+
+.qr-grid span:nth-child(3n) {
+  background: #b4572f;
+}
+
+.qr-copy h2,
+.x-card h2 {
+  margin: 0;
+  font-family: "Fraunces", "Noto Serif SC", serif;
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+}
+
+.qr-copy p,
+.x-card p {
+  color: var(--muted);
+  line-height: 1.8;
 }
 
 .featured-card h2,
@@ -641,7 +704,12 @@ pre {
 
   .about-grid,
   .tag-grid,
-  .studio-layout {
+  .studio-layout,
+  .contact-showcase {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-card {
     grid-template-columns: 1fr;
   }
 

@@ -10,6 +10,7 @@ const templateCssPath = path.join(root, "templates", "site.css");
 const studioScriptPath = path.join(root, "templates", "studio.js");
 const viewsScriptPath = path.join(root, "templates", "views.js");
 const avatarPlaceholderPath = path.join(root, "templates", "avatar-placeholder.svg");
+const avatarImagePath = path.join(root, "templates", "avatar.png");
 const basePath = process.env.SITE_BASE_PATH || "/";
 
 const site = {
@@ -22,7 +23,7 @@ const site = {
   email: "q343553497@gmail.com",
   xUrl: "https://x.com/",
   githubUrl: "https://github.com/Henry0620-tuzi/wenzhang",
-  avatarUrl: "/avatar-placeholder.svg",
+  avatarUrl: "/avatar.png",
   links: [
     { label: "首页", href: "/" },
     { label: "关于", href: "/about/" },
@@ -681,10 +682,12 @@ async function main() {
   const studioScript = await fs.readFile(studioScriptPath, "utf8");
   const viewsScript = await fs.readFile(viewsScriptPath, "utf8");
   const avatarPlaceholder = await fs.readFile(avatarPlaceholderPath, "utf8");
+  const avatarImage = await fs.readFile(avatarImagePath);
   await fs.writeFile(path.join(distDir, "site.css"), css, "utf8");
   await fs.writeFile(path.join(distDir, "studio.js"), studioScript, "utf8");
   await fs.writeFile(path.join(distDir, "views.js"), viewsScript, "utf8");
   await fs.writeFile(path.join(distDir, "avatar-placeholder.svg"), avatarPlaceholder, "utf8");
+  await fs.writeFile(path.join(distDir, "avatar.png"), avatarImage);
   await fs.writeFile(path.join(distDir, ".nojekyll"), "", "utf8");
 
   const posts = await loadPosts();

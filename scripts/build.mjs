@@ -398,16 +398,16 @@ function renderHome(posts) {
 
 <section class="info-grid">
   <article class="info-card">
-    <h2>怎么发文</h2>
-    <p>在 <code>content/posts/</code> 新建一个 <code>.md</code> 文件，填写标题、日期和正文即可。</p>
+    <h2>关于我</h2>
+    <p>${escapeHtml(site.bio)} 这里会持续更新我的文章、想法和长期项目。</p>
   </article>
   <article class="info-card">
-    <h2>为什么适合你</h2>
-    <p>内容是静态生成的，速度快、维护轻、部署便宜，而且你随时能接入自己的域名。</p>
+    <h2>我写什么</h2>
+    <p>我会记录随笔、项目、学习笔记，以及那些值得长期沉淀下来的内容。</p>
   </article>
   <article class="info-card">
-    <h2>后续可扩展</h2>
-    <p>以后我们还可以继续加评论、搜索、订阅、后台编辑器，甚至会员系统。</p>
+    <h2>怎么联系我</h2>
+    <p>你可以通过页面底部的邮箱入口联系我，后续也可以继续补上二维码和更多社交方式。</p>
   </article>
 </section>
 

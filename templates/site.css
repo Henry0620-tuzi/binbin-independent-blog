@@ -226,15 +226,16 @@ pre {
   margin-bottom: 2rem;
 }
 
-.contact-showcase {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
+.qr-card,
+.contact-bottom {
+  margin-top: 2.4rem;
 }
 
-.qr-card,
-.x-card {
+.contact-bottom .qr-card {
+  margin-top: 1rem;
+}
+
+.qr-card {
   border-radius: 1.6rem;
   padding: 1.3rem;
 }
@@ -276,16 +277,22 @@ pre {
 }
 
 .qr-copy h2,
-.x-card h2 {
+.contact-bottom h3 {
   margin: 0;
   font-family: "Fraunces", "Noto Serif SC", serif;
   font-size: clamp(1.7rem, 4vw, 2.6rem);
 }
 
-.qr-copy p,
-.x-card p {
+.qr-copy p {
   color: var(--muted);
   line-height: 1.8;
+}
+
+.contact-links {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
 }
 
 .featured-card h2,
@@ -704,8 +711,7 @@ pre {
 
   .about-grid,
   .tag-grid,
-  .studio-layout,
-  .contact-showcase {
+  .studio-layout {
     grid-template-columns: 1fr;
   }
 

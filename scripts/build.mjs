@@ -23,6 +23,7 @@ const site = {
     { label: "首页", href: "/" },
     { label: "关于", href: "/about/" },
     { label: "分类", href: "/tags/" },
+    { label: "X", href: "https://x.com/", external: true },
   ],
   highlights: [
     { label: "写作", value: "Markdown" },
@@ -268,7 +269,9 @@ function createLayout({ title, description, content }) {
           </a>
           <nav class="topnav" aria-label="主导航">
             ${site.links
-              .map((link) => `<a href="${withBase(link.href)}">${escapeHtml(link.label)}</a>`)
+              .map((link) =>
+                `<a href="${link.external ? escapeHtml(link.href) : withBase(link.href)}"${link.external ? ' target="_blank" rel="noreferrer"' : ""}>${escapeHtml(link.label)}</a>`
+              )
               .join("")}
           </nav>
         </header>
@@ -375,7 +378,6 @@ function renderHome(posts) {
     <div class="hero-actions">
       <a class="button button-primary" href="#posts">查看文章</a>
       <a class="button button-secondary" href="${withBase("/about/")}">认识我</a>
-      <a class="button button-secondary" href="${escapeHtml(site.xUrl)}" target="_blank" rel="noreferrer">直连 X</a>
     </div>
   </div>
   <aside class="hero-panel">
@@ -392,30 +394,6 @@ function renderHome(posts) {
     </dl>
     <p class="hero-location">${escapeHtml(site.location)}</p>
   </aside>
-</section>
-
-<section class="contact-showcase">
-  <article class="qr-card">
-    <div class="qr-placeholder">
-      <div class="qr-grid" aria-hidden="true">
-        <span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span>
-      </div>
-    </div>
-    <div class="qr-copy">
-      <p class="eyebrow">Connect</p>
-      <h2>二维码展示位</h2>
-      <p>这里预留给你的微信、公众号、社群或个人名片二维码。后面你把图片给我，我可以直接替换成正式版本。</p>
-    </div>
-  </article>
-  <article class="x-card">
-    <p class="eyebrow">Social</p>
-    <h2>公开社交入口</h2>
-    <p>如果你也在 X 上发布观点、链接或短内容，这里可以作为访客继续了解你的第二入口。</p>
-    <a class="featured-link" href="${escapeHtml(site.xUrl)}" target="_blank" rel="noreferrer">打开 X 主页</a>
-  </article>
 </section>
 
 <section class="info-grid">
@@ -448,6 +426,31 @@ function renderHome(posts) {
   <div class="post-list">
     ${cards}
   </div>
+</section>
+
+<section class="contact-bottom">
+  <div class="section-heading">
+    <p class="eyebrow">Contact</p>
+    <h2>联系我</h2>
+  </div>
+  <article class="qr-card">
+    <div class="qr-placeholder">
+      <div class="qr-grid" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+    <div class="qr-copy">
+      <h3>二维码展示位</h3>
+      <p>这里预留给你的微信、公众号、社群或个人名片二维码。你把正式二维码图片给我后，我可以直接替换进去。</p>
+      <div class="contact-links">
+        <a class="featured-link" href="mailto:${escapeHtml(site.email)}">邮件联系</a>
+        <a class="featured-link" href="${escapeHtml(site.xUrl)}" target="_blank" rel="noreferrer">打开 X</a>
+      </div>
+    </div>
+  </article>
 </section>`,
   });
 }

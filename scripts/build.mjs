@@ -354,6 +354,7 @@ async function loadPosts() {
           .map((tag) => tag.trim())
           .filter(Boolean);
     const slug = slugify(path.basename(entry.name, ".md"));
+    const published = unquote(meta.published || "true").toLowerCase() !== "false";
 
     if (!title || !description || !date) {
       throw new Error(`${entry.name} 缺少 title/description/date`);
@@ -366,6 +367,7 @@ async function loadPosts() {
       date,
       cover,
       tags,
+      published,
       bodyHtml: renderMarkdown(body),
     });
   }
@@ -677,6 +679,13 @@ function renderStudio() {
       </label>
     </div>
     <label class="studio-field">
+      <span>发布状态</span>
+      <select id="studio-published">
+        <option value="true">公开（网站访客可见）</option>
+        <option value="false">隐藏（仅保存在 GitHub）</option>
+      </select>
+    </label>
+    <label class="studio-field">
       <span>一句摘要</span>
       <input id="studio-description" type="text" value="用一句话说明这篇文章写什么。" maxlength="240" />
     </label>
@@ -743,6 +752,19 @@ function renderStudio() {
     <div class="article-content" id="preview-body"></div>
   </section>
 </section>
+
+<section class="studio-manager">
+  <div class="studio-manager-heading">
+    <div>
+      <p class="eyebrow">Article Manager</p>
+      <h2>文章管理</h2>
+      <p class="studio-hint">公开或隐藏文章会触发网站重新部署；删除会从 GitHub 仓库移除文章源文件。</p>
+    </div>
+    <button class="button button-secondary" type="button" id="refresh-posts">刷新列表</button>
+  </div>
+  <p class="studio-status" id="posts-status" role="status">正在读取文章列表…</p>
+  <div class="studio-post-list" id="studio-post-list"></div>
+</section>
 </section>
 
 <script src="${withBase("/studio.js")}"></script>`,
@@ -770,7 +792,8 @@ async function main() {
   await fs.writeFile(path.join(distDir, "avatar.png"), avatarImage);
   await fs.writeFile(path.join(distDir, ".nojekyll"), "", "utf8");
 
-  const posts = await loadPosts();
+  const allPosts = await loadPosts();
+  const posts = allPosts.filter((post) => post.published);
   const tags = groupTags(posts);
   await fs.writeFile(path.join(distDir, "index.html"), renderHome(posts), "utf8");
   const aboutDir = path.join(distDir, "about");
@@ -796,7 +819,7 @@ async function main() {
     await fs.writeFile(path.join(tagPath, "index.html"), renderTagPage(tag), "utf8");
   }
 
-  console.log(`Built ${posts.length} post(s) and ${tags.length} tag page(s) into ${distDir}`);
+  console.log(`Built ${posts.length} public post(s), skipped ${allPosts.length - posts.length} hidden post(s), and built ${tags.length} tag page(s) into ${distDir}`);
 }
 
 main().catch((error) => {

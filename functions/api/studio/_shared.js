@@ -135,6 +135,15 @@ export async function putGithubFile(env, { path, content, message }) {
   });
 }
 
+export async function deleteGithubFile(env, { path, message }) {
+  const branch = env.GITHUB_BRANCH || "main";
+  const existing = await githubRequest(env, `/contents/${encodeURI(path)}?ref=${encodeURIComponent(branch)}`);
+  return githubRequest(env, `/contents/${encodeURI(path)}`, {
+    method: "DELETE",
+    body: JSON.stringify({ message, sha: existing.sha, branch }),
+  });
+}
+
 export function normalizeDraft(input) {
   const title = singleLine(input.title, 120);
   const slug = sanitizeSlug(input.slug || title);
@@ -147,14 +156,15 @@ export function normalizeDraft(input) {
   const coverValue = singleLine(input.cover, 500);
   const cover = /^(?:https?:\/\/|\/)/i.test(coverValue) ? coverValue : "";
   const body = String(input.body || "").trim().slice(0, 200000);
-  return { title, slug, description, date, tags, cover, body };
+  const published = input.published !== false;
+  return { title, slug, description, date, tags, cover, body, published };
 }
 
 export function draftToMarkdown(draft) {
   const yamlValue = (value) => JSON.stringify(String(value));
   const tags = draft.tags.length ? `tags:\n${draft.tags.map((tag) => `  - ${yamlValue(tag)}`).join("\n")}` : "tags: []";
   const cover = draft.cover ? `\ncover: ${yamlValue(draft.cover)}` : "";
-  return `---\ntitle: ${yamlValue(draft.title)}\ndescription: ${yamlValue(draft.description)}\ndate: ${draft.date}\n${tags}${cover}\n---\n\n${draft.body}\n`;
+  return `---\ntitle: ${yamlValue(draft.title)}\ndescription: ${yamlValue(draft.description)}\ndate: ${draft.date}\npublished: ${draft.published}\n${tags}${cover}\n---\n\n${draft.body}\n`;
 }
 
 export async function authenticatedContext(context) {

@@ -433,7 +433,8 @@ pre {
 }
 
 .studio-field input,
-.studio-field textarea {
+.studio-field textarea,
+.studio-field select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 1rem;
@@ -452,7 +453,8 @@ pre {
 }
 
 .studio-field input:focus,
-.studio-field textarea:focus {
+.studio-field textarea:focus,
+.studio-field select:focus {
   border-color: rgba(180, 87, 47, 0.45);
   box-shadow: 0 0 0 4px rgba(180, 87, 47, 0.08);
 }
@@ -530,6 +532,96 @@ pre {
 .studio-cover-preview {
   max-height: 28rem;
   margin: 1rem 0;
+}
+
+.studio-manager {
+  margin: 1.5rem 0 3rem;
+  backdrop-filter: blur(10px);
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow);
+  border-radius: 1.6rem;
+  padding: 1.25rem;
+}
+
+.studio-manager-heading,
+.studio-post-card,
+.studio-post-title-row,
+.studio-post-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.studio-manager-heading,
+.studio-post-card {
+  justify-content: space-between;
+}
+
+.studio-manager-heading h2,
+.studio-post-title-row h3 {
+  margin: 0;
+}
+
+.studio-post-list {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.studio-post-card {
+  border: 1px solid var(--line);
+  border-radius: 1.2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.studio-post-content {
+  min-width: 0;
+}
+
+.studio-post-title-row {
+  flex-wrap: wrap;
+}
+
+.studio-post-meta,
+.studio-post-description,
+.studio-empty {
+  color: var(--muted);
+  margin: 0.35rem 0 0;
+}
+
+.studio-post-description {
+  line-height: 1.6;
+}
+
+.studio-post-badge {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.studio-post-badge.is-public {
+  color: #215d35;
+  background: #dff4e5;
+}
+
+.studio-post-badge.is-hidden {
+  color: #7a5522;
+  background: #f8ead0;
+}
+
+.button-small {
+  padding: 0.65rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.button-danger {
+  color: #9d2f23;
+  border: 1px solid rgba(157, 47, 35, 0.25);
+  background: rgba(255, 235, 231, 0.8);
 }
 
 .about-profile {
@@ -862,6 +954,16 @@ pre {
 
   .studio-heading-row {
     display: grid;
+  }
+
+  .studio-manager-heading,
+  .studio-post-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .studio-post-actions .button {
+    flex: 1;
   }
 
   .qr-card {

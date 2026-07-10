@@ -17,8 +17,9 @@ export async function onRequestPost(context) {
 
   const siteUrl = String(context.env.SITE_URL || new URL(context.request.url).origin).replace(/\/$/, "");
   return json({
-    published: true,
+    saved: true,
+    published: draft.published,
     commit: result.commit?.html_url || null,
-    articleUrl: `${siteUrl}/posts/${encodeURIComponent(draft.slug)}/`,
+    articleUrl: draft.published ? `${siteUrl}/posts/${encodeURIComponent(draft.slug)}/` : null,
   });
 }

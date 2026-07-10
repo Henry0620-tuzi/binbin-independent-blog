@@ -5,6 +5,7 @@ const api = {
   draft: "/api/studio/draft",
   upload: "/api/studio/upload",
   publish: "/api/studio/publish",
+  posts: "/api/studio/posts",
 };
 
 const elements = {
@@ -13,6 +14,7 @@ const elements = {
   description: document.getElementById("studio-description"),
   date: document.getElementById("studio-date"),
   tags: document.getElementById("studio-tags"),
+  published: document.getElementById("studio-published"),
   cover: document.getElementById("studio-cover"),
   body: document.getElementById("studio-body"),
   previewTitle: document.getElementById("preview-title"),
@@ -34,6 +36,9 @@ const elements = {
   logout: document.getElementById("studio-logout"),
   gateStatus: document.getElementById("gate-status"),
   status: document.getElementById("studio-status"),
+  postsStatus: document.getElementById("posts-status"),
+  postList: document.getElementById("studio-post-list"),
+  refreshPosts: document.getElementById("refresh-posts"),
 };
 
 let slugWasEdited = false;
@@ -188,6 +193,7 @@ function getDraft() {
     description: elements.description.value.trim(),
     date: elements.date.value || today(),
     tags: elements.tags.value.split(",").map((tag) => tag.trim()).filter(Boolean),
+    published: elements.published.value !== "false",
     cover: elements.cover.value.trim(),
     body: elements.body.value.trim(),
   };
@@ -205,6 +211,7 @@ function buildMarkdown() {
     `title: ${yamlValue(draft.title || "未命名文章")}`,
     `description: ${yamlValue(draft.description || "请填写摘要")}`,
     `date: ${draft.date}`,
+    `published: ${draft.published}`,
     `${tagsBlock}${coverLine}`,
     "---",
     "",
@@ -219,10 +226,16 @@ function applyDraft(draft = {}) {
   elements.description.value = draft.description || "用一句话说明这篇文章写什么。";
   elements.date.value = draft.date || today();
   elements.tags.value = Array.isArray(draft.tags) ? draft.tags.join(", ") : (draft.tags || "随笔, 想法");
+  elements.published.value = draft.published === false ? "false" : "true";
   elements.cover.value = draft.cover || "";
   elements.body.value = draft.body || "## 从这里开始写\n\n你可以直接在网页里开始写作。";
   slugWasEdited = Boolean(draft.slug);
+  updatePublishButton();
   updatePreview();
+}
+
+function updatePublishButton() {
+  elements.publish.textContent = elements.published.value === "false" ? "保存为隐藏文章" : "一键发布";
 }
 
 function updatePreview() {
@@ -250,6 +263,11 @@ function setStatus(message, type = "info") {
 function setGateStatus(message, type = "info") {
   elements.gateStatus.textContent = message;
   elements.gateStatus.dataset.type = type;
+}
+
+function setPostsStatus(message, type = "info") {
+  elements.postsStatus.textContent = message;
+  elements.postsStatus.dataset.type = type;
 }
 
 async function request(url, options = {}) {
@@ -287,7 +305,116 @@ async function loadDraft() {
 async function unlockStudio() {
   elements.gate.style.display = "none";
   elements.shell.classList.remove("is-locked");
-  await loadDraft();
+  await Promise.all([loadDraft(), loadPosts()]);
+}
+
+function createPostButton(label, className, handler) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className;
+  button.textContent = label;
+  button.addEventListener("click", handler);
+  return button;
+}
+
+function renderPosts(posts) {
+  elements.postList.replaceChildren();
+  if (!posts.length) {
+    const empty = document.createElement("p");
+    empty.className = "studio-empty";
+    empty.textContent = "还没有文章。";
+    elements.postList.appendChild(empty);
+    return;
+  }
+
+  for (const post of posts) {
+    const card = document.createElement("article");
+    card.className = "studio-post-card";
+
+    const content = document.createElement("div");
+    content.className = "studio-post-content";
+    const heading = document.createElement("div");
+    heading.className = "studio-post-title-row";
+    const title = document.createElement("h3");
+    title.textContent = post.title;
+    const badge = document.createElement("span");
+    badge.className = `studio-post-badge ${post.published ? "is-public" : "is-hidden"}`;
+    badge.textContent = post.published ? "公开" : "隐藏";
+    heading.append(title, badge);
+    const meta = document.createElement("p");
+    meta.className = "studio-post-meta";
+    meta.textContent = `${post.date || "未设置日期"} · ${post.slug}`;
+    content.append(heading, meta);
+    if (post.description) {
+      const description = document.createElement("p");
+      description.className = "studio-post-description";
+      description.textContent = post.description;
+      content.appendChild(description);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "studio-post-actions";
+    const toggle = createPostButton(
+      post.published ? "隐藏" : "公开",
+      "button button-secondary button-small",
+      () => changePostVisibility(post, toggle),
+    );
+    const remove = createPostButton(
+      "删除",
+      "button button-danger button-small",
+      () => deletePost(post, remove),
+    );
+    actions.append(toggle, remove);
+    card.append(content, actions);
+    elements.postList.appendChild(card);
+  }
+}
+
+async function loadPosts() {
+  elements.refreshPosts.disabled = true;
+  setPostsStatus("正在读取文章列表…");
+  try {
+    const data = await request(api.posts);
+    renderPosts(Array.isArray(data.posts) ? data.posts : []);
+    setPostsStatus(`共 ${data.posts?.length || 0} 篇文章。`);
+  } catch (error) {
+    setPostsStatus(error.message, "error");
+  } finally {
+    elements.refreshPosts.disabled = false;
+  }
+}
+
+async function changePostVisibility(post, button) {
+  const nextPublished = !post.published;
+  const action = nextPublished ? "公开" : "隐藏";
+  if (!window.confirm(`确定${action}《${post.title}》吗？网站会在重新部署后更新。`)) return;
+  button.disabled = true;
+  setPostsStatus(`正在${action}《${post.title}》…`);
+  try {
+    await request(api.posts, {
+      method: "PATCH",
+      body: JSON.stringify({ slug: post.slug, published: nextPublished }),
+    });
+    await loadPosts();
+    setPostsStatus(`《${post.title}》已${action}，网站通常会在 1–3 分钟内更新。`, "success");
+  } catch (error) {
+    setPostsStatus(error.message, "error");
+    button.disabled = false;
+  }
+}
+
+async function deletePost(post, button) {
+  if (!window.confirm(`确定永久删除《${post.title}》吗？\n\n文章源文件会从 GitHub 删除，此操作不能在后台撤销。`)) return;
+  button.disabled = true;
+  setPostsStatus(`正在删除《${post.title}》…`);
+  try {
+    await request(api.posts, { method: "DELETE", body: JSON.stringify({ slug: post.slug }) });
+    await loadPosts();
+    setPostsStatus(`《${post.title}》已删除，网站通常会在 1–3 分钟内更新。`, "success");
+  } catch (error) {
+    setPostsStatus(error.message, "error");
+    button.disabled = false;
+  }
 }
 
 async function checkSession() {
@@ -363,13 +490,19 @@ async function publishPost() {
     setStatus("请先填写标题、摘要和正文。", "error");
     return;
   }
-  if (!window.confirm(`确定发布《${draft.title}》吗？发布后会提交到 GitHub 并触发自动部署。`)) return;
+  const action = draft.published ? "公开发布" : "保存为隐藏文章";
+  if (!window.confirm(`确定${action}《${draft.title}》吗？提交后会触发网站自动部署。`)) return;
 
   elements.publish.disabled = true;
   setStatus("正在提交 GitHub…");
   try {
     const data = await request(api.publish, { method: "POST", body: JSON.stringify(draft) });
-    setStatus("发布提交成功，网站通常会在 1–3 分钟内更新。", "success");
+    setStatus(
+      draft.published
+        ? "发布提交成功，网站通常会在 1–3 分钟内更新。"
+        : "隐藏文章已保存到 GitHub，不会出现在公开网站。",
+      "success",
+    );
     if (data.articleUrl) {
       const link = document.createElement("a");
       link.href = data.articleUrl;
@@ -378,6 +511,7 @@ async function publishPost() {
       link.rel = "noreferrer";
       elements.status.append(" ", link);
     }
+    await loadPosts();
   } catch (error) {
     setStatus(error.message, "error");
   } finally {
@@ -404,6 +538,7 @@ elements.slug.addEventListener("input", () => {
   slugWasEdited = true;
   elements.slug.value = slugify(elements.slug.value);
 });
+elements.published.addEventListener("change", updatePublishButton);
 elements.enter.addEventListener("click", login);
 elements.password.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
@@ -417,6 +552,7 @@ elements.logout.addEventListener("click", async () => {
 });
 elements.save.addEventListener("click", saveDraft);
 elements.publish.addEventListener("click", publishPost);
+elements.refreshPosts.addEventListener("click", loadPosts);
 elements.coverUpload.addEventListener("change", () => uploadFiles([...elements.coverUpload.files], "cover"));
 elements.bodyUpload.addEventListener("change", () => uploadFiles([...elements.bodyUpload.files], "body"));
 elements.copy.addEventListener("click", async () => {
@@ -426,5 +562,6 @@ elements.copy.addEventListener("click", async () => {
 elements.download.addEventListener("click", downloadMarkdown);
 
 elements.date.value = today();
+updatePublishButton();
 updatePreview();
 checkSession();

@@ -10,6 +10,8 @@
 - 实时 Markdown 预览
 - 封面和正文图片上传
 - 一键提交文章到 GitHub
+- 新文章可选择公开或隐藏
+- 后台可切换文章公开状态或永久删除文章
 - Cloudflare Pages 自动部署
 - GitHub 提交后由 Cloudflare Pages 自动更新正式网站
 
@@ -31,6 +33,7 @@ npm run dev
 title: 我的第一篇文章
 description: 一句话摘要
 date: 2026-07-10
+published: true
 tags:
   - 随笔
   - 技术
@@ -41,6 +44,8 @@ cover: /uploads/covers/example.webp
 
 ![正文图片](/uploads/posts/example.webp)
 ```
+
+`published: true` 表示公开；`published: false` 表示隐藏。旧文章没有这个字段时默认公开。隐藏文章仍保存在 GitHub，但不会生成公开文章页面，也不会出现在首页、标签页或文章统计中。
 
 ## Cloudflare Pages 正式部署
 
@@ -102,6 +107,14 @@ https://binbin-independent-blog-pages.pages.dev/studio/
 6. 后台提交 `content/posts/<slug>.md` 到 GitHub `main`
 7. Cloudflare Pages 自动部署新版本
 8. Cloudflare Pages 自动构建并更新正式网站
+
+后台下方的“文章管理”可以查看全部文章，并执行：
+
+- “隐藏”：文章保留在 GitHub，但从公开网站撤下
+- “公开”：将隐藏文章重新发布到网站
+- “删除”：从 GitHub 永久删除文章源文件
+
+公开、隐藏和删除都会提交 GitHub，并由 Cloudflare Pages 自动部署，通常需要 1–3 分钟生效。
 
 ## GitHub Pages 镜像
 

@@ -17,3 +17,11 @@ export async function onRequestPut(context) {
   await context.env.STUDIO_DRAFTS.put("current", JSON.stringify({ draft, updatedAt }));
   return json({ saved: true, updatedAt });
 }
+
+export async function onRequestDelete(context) {
+  const auth = await authenticatedContext(context);
+  if (auth.error) return auth.error;
+  if (!context.env.STUDIO_DRAFTS) return json({ error: "尚未绑定 STUDIO_DRAFTS KV。" }, 503);
+  await context.env.STUDIO_DRAFTS.delete("current");
+  return json({ deleted: true });
+}

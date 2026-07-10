@@ -44,7 +44,7 @@ cover: /uploads/covers/example.webp
 
 ## Cloudflare Pages 正式部署
 
-请创建一个新的 Pages 项目，例如 `binbin-independent-blog`。不要使用 `wenzhang.pages.dev`，该地址目前属于另一个“文章爬取工具”项目。
+正式 Cloudflare Pages 项目为 `binbin-independent-blog-pages`。不要使用 `wenzhang.pages.dev`，该地址目前属于另一个“文章爬取工具”项目。
 
 连接仓库 `Henry0620-tuzi/binbin-independent-blog`，配置：
 
@@ -61,7 +61,7 @@ Root directory: 留空
 ### 必填环境变量
 
 ```txt
-SITE_URL=https://你的-pages-地址或正式域名
+SITE_URL=https://binbin-independent-blog-pages.pages.dev
 STUDIO_PASSWORD=你的后台登录口令
 STUDIO_SESSION_SECRET=至少32位的随机字符串
 GITHUB_TOKEN=GitHub Fine-grained Personal Access Token

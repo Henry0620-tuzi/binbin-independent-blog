@@ -8,5 +8,9 @@ GITHUB_OWNER = "Henry0620-tuzi"
 GITHUB_REPO = "binbin-independent-blog"
 GITHUB_BRANCH = "main"
 
+[[kv_namespaces]]
+binding = "STUDIO_DRAFTS"
+id = "fb6f38f8e24042e8be97a49972251ec9"
+
 # 在 Cloudflare Pages 后台创建 KV namespace，并把绑定变量命名为 STUDIO_DRAFTS。
 # 密钥 STUDIO_PASSWORD、STUDIO_SESSION_SECRET、GITHUB_TOKEN 请只在后台配置。

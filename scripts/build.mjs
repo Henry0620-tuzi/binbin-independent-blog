@@ -23,14 +23,14 @@ const site = {
   location: "中国 / 线上",
   email: "q343553497@gmail.com",
   xUrl: "https://x.com/",
-  githubUrl: "https://github.com/Henry0620-tuzi/wenzhang",
+  githubUrl: "https://github.com/Henry0620-tuzi/binbin-independent-blog",
   avatarUrl: "/avatar.png",
   links: [
     { label: "首页", href: "/" },
     { label: "文章", href: "/#posts" },
     { label: "分类", href: "/tags/" },
     { label: "X", href: "https://x.com/", external: true },
-    { label: "GitHub", href: "https://github.com/Henry0620-tuzi/wenzhang", external: true },
+    { label: "GitHub", href: "https://github.com/Henry0620-tuzi/binbin-independent-blog", external: true },
   ],
   highlights: [
     { label: "主题", value: "随笔与项目" },

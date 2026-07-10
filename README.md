@@ -46,7 +46,7 @@ cover: /uploads/covers/example.webp
 
 请创建一个新的 Pages 项目，例如 `binbin-independent-blog`。不要使用 `wenzhang.pages.dev`，该地址目前属于另一个“文章爬取工具”项目。
 
-连接仓库 `Henry0620-tuzi/wenzhang`，配置：
+连接仓库 `Henry0620-tuzi/binbin-independent-blog`，配置：
 
 ```txt
 Production branch: main
@@ -56,7 +56,7 @@ Build output directory: dist
 Root directory: 留空
 ```
 
-不要在 Cloudflare 设置 `SITE_BASE_PATH=/wenzhang/`，Cloudflare 使用根路径 `/`。
+不要在 Cloudflare 设置 `SITE_BASE_PATH=/binbin-independent-blog/`，Cloudflare 使用根路径 `/`。
 
 ### 必填环境变量
 
@@ -66,11 +66,11 @@ STUDIO_PASSWORD=你的后台登录口令
 STUDIO_SESSION_SECRET=至少32位的随机字符串
 GITHUB_TOKEN=GitHub Fine-grained Personal Access Token
 GITHUB_OWNER=Henry0620-tuzi
-GITHUB_REPO=wenzhang
+GITHUB_REPO=binbin-independent-blog
 GITHUB_BRANCH=main
 ```
 
-GitHub Token 仅授权仓库 `Henry0620-tuzi/wenzhang`，权限至少包含：
+GitHub Token 仅授权仓库 `Henry0620-tuzi/binbin-independent-blog`，权限至少包含：
 
 - Contents: Read and write
 - Metadata: Read
@@ -107,12 +107,12 @@ https://你的正式站点/studio/
 
 当前公开镜像：
 
-`https://henry0620-tuzi.github.io/wenzhang/`
+`https://henry0620-tuzi.github.io/binbin-independent-blog/`
 
 `.github/workflows/deploy-pages.yml` 会在 `main` 更新后自动执行：
 
 ```bash
-SITE_BASE_PATH=/wenzhang/ npm run build
+SITE_BASE_PATH=/binbin-independent-blog/ npm run build
 ```
 
 GitHub Pages 不支持 Pages Functions，因此它的 `/studio/` 只能显示后台界面，不能完成登录与发布。请使用 Cloudflare Pages 地址进入后台。

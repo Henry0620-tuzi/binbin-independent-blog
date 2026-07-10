@@ -1,0 +1,6 @@
+name = "binbin-independent-blog"
+compatibility_date = "2026-07-10"
+pages_build_output_dir = "dist"
+
+# 在 Cloudflare Pages 后台创建 KV namespace，并把绑定变量命名为 STUDIO_DRAFTS。
+# 密钥 STUDIO_PASSWORD、STUDIO_SESSION_SECRET、GITHUB_TOKEN 请只在后台配置。

@@ -1,22 +1,46 @@
-const titleInput = document.getElementById("studio-title");
-const descriptionInput = document.getElementById("studio-description");
-const tagsInput = document.getElementById("studio-tags");
-const bodyInput = document.getElementById("studio-body");
-const previewTitle = document.getElementById("preview-title");
-const previewDescription = document.getElementById("preview-description");
-const previewTags = document.getElementById("preview-tags");
-const previewBody = document.getElementById("preview-body");
-const copyButton = document.getElementById("copy-markdown");
-const downloadButton = document.getElementById("download-markdown");
-const gate = document.getElementById("admin-gate");
-const studioShell = document.getElementById("studio-shell");
-const gatePassword = document.getElementById("gate-password");
-const gateEnter = document.getElementById("gate-enter");
-const STUDIO_PASSWORD = "binbin2026";
-const STUDIO_STORAGE_KEY = "binbin-studio-unlocked";
+const api = {
+  session: "/api/studio/session",
+  login: "/api/studio/login",
+  logout: "/api/studio/logout",
+  draft: "/api/studio/draft",
+  upload: "/api/studio/upload",
+  publish: "/api/studio/publish",
+};
+
+const elements = {
+  title: document.getElementById("studio-title"),
+  slug: document.getElementById("studio-slug"),
+  description: document.getElementById("studio-description"),
+  date: document.getElementById("studio-date"),
+  tags: document.getElementById("studio-tags"),
+  cover: document.getElementById("studio-cover"),
+  body: document.getElementById("studio-body"),
+  previewTitle: document.getElementById("preview-title"),
+  previewDescription: document.getElementById("preview-description"),
+  previewDate: document.getElementById("preview-date"),
+  previewTags: document.getElementById("preview-tags"),
+  previewCover: document.getElementById("preview-cover"),
+  previewBody: document.getElementById("preview-body"),
+  copy: document.getElementById("copy-markdown"),
+  download: document.getElementById("download-markdown"),
+  save: document.getElementById("save-draft"),
+  publish: document.getElementById("publish-post"),
+  coverUpload: document.getElementById("cover-upload"),
+  bodyUpload: document.getElementById("body-upload"),
+  gate: document.getElementById("admin-gate"),
+  shell: document.getElementById("studio-shell"),
+  password: document.getElementById("gate-password"),
+  enter: document.getElementById("gate-enter"),
+  logout: document.getElementById("studio-logout"),
+  gateStatus: document.getElementById("gate-status"),
+  status: document.getElementById("studio-status"),
+};
+
+let slugWasEdited = false;
+let requestInProgress = false;
 
 function escapeHtml(value) {
-  return value
+  return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -24,41 +48,66 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function slugify(value) {
+  return String(value)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "new-post";
+}
+
 function renderInline(text) {
-  let html = escapeHtml(text);
+  const tokens = [];
+  const reserve = (html) => {
+    const token = `@@STUDIO_HTML_${tokens.length}@@`;
+    tokens.push(html);
+    return token;
+  };
+
+  let source = String(text).replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, url) => {
+    if (!/^(?:https?:\/\/|\/)/i.test(url)) return alt;
+    return reserve(`<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" />`);
+  });
+
+  source = source.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, url) => {
+    if (!/^(?:https?:\/\/|mailto:|\/|#)/i.test(url)) return label;
+    return reserve(`<a href="${escapeHtml(url)}">${escapeHtml(label)}</a>`);
+  });
+
+  let html = escapeHtml(source);
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
   html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  tokens.forEach((value, index) => {
+    html = html.replace(`@@STUDIO_HTML_${index}@@`, value);
+  });
   return html;
 }
 
 function renderMarkdown(markdown) {
-  const lines = markdown.split("\n");
+  const lines = String(markdown).split("\n");
   const html = [];
   let inList = false;
   let inCode = false;
   let codeBuffer = [];
   let paragraph = [];
 
-  function flushParagraph() {
-    if (paragraph.length === 0) return;
-    html.push("<p>" + renderInline(paragraph.join(" ")) + "</p>");
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    html.push(`<p>${renderInline(paragraph.join(" "))}</p>`);
     paragraph = [];
-  }
-
-  function flushList() {
+  };
+  const flushList = () => {
     if (!inList) return;
     html.push("</ul>");
     inList = false;
-  }
-
-  function flushCode() {
+  };
+  const flushCode = () => {
     if (!inCode) return;
-    html.push("<pre><code>" + escapeHtml(codeBuffer.join("\n")) + "</code></pre>");
+    html.push(`<pre><code>${escapeHtml(codeBuffer.join("\n"))}</code></pre>`);
     inCode = false;
     codeBuffer = [];
-  }
+  };
 
   for (const line of lines) {
     if (line.startsWith("```")) {
@@ -68,154 +117,314 @@ function renderMarkdown(markdown) {
       else inCode = true;
       continue;
     }
-
     if (inCode) {
       codeBuffer.push(line);
       continue;
     }
-
     if (!line.trim()) {
       flushParagraph();
       flushList();
       continue;
     }
-
     if (line.startsWith("## ")) {
       flushParagraph();
       flushList();
-      html.push("<h2>" + renderInline(line.slice(3).trim()) + "</h2>");
+      html.push(`<h2>${renderInline(line.slice(3).trim())}</h2>`);
       continue;
     }
-
     if (line.startsWith("### ")) {
       flushParagraph();
       flushList();
-      html.push("<h3>" + renderInline(line.slice(4).trim()) + "</h3>");
+      html.push(`<h3>${renderInline(line.slice(4).trim())}</h3>`);
       continue;
     }
-
+    if (line.startsWith("> ")) {
+      flushParagraph();
+      flushList();
+      html.push(`<blockquote><p>${renderInline(line.slice(2).trim())}</p></blockquote>`);
+      continue;
+    }
     if (line.startsWith("- ")) {
       flushParagraph();
       if (!inList) {
         html.push("<ul>");
         inList = true;
       }
-      html.push("<li>" + renderInline(line.slice(2).trim()) + "</li>");
+      html.push(`<li>${renderInline(line.slice(2).trim())}</li>`);
       continue;
     }
-
     paragraph.push(line.trim());
   }
 
   flushParagraph();
   flushList();
   flushCode();
-
   return html.join("\n");
 }
 
-function slugify(value) {
-  return (
-    value
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "new-post"
-  );
+function today() {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Shanghai",
+  }).format(new Date());
+}
+
+function formatDate(value) {
+  if (!value) return "未设置日期";
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "Asia/Shanghai",
+  }).format(new Date(`${value}T00:00:00+08:00`));
+}
+
+function getDraft() {
+  return {
+    title: elements.title.value.trim(),
+    slug: slugify(elements.slug.value || elements.title.value),
+    description: elements.description.value.trim(),
+    date: elements.date.value || today(),
+    tags: elements.tags.value.split(",").map((tag) => tag.trim()).filter(Boolean),
+    cover: elements.cover.value.trim(),
+    body: elements.body.value.trim(),
+  };
 }
 
 function buildMarkdown() {
-  const title = titleInput.value.trim() || "未命名文章";
-  const description = descriptionInput.value.trim() || "请填写摘要";
-  const tags = tagsInput.value
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-  const today = new Date().toISOString().slice(0, 10);
-  const tagsBlock = tags.length > 0
-    ? "tags:\n" + tags.map((tag) => "  - " + tag).join("\n")
+  const draft = getDraft();
+  const yamlValue = (value) => JSON.stringify(String(value));
+  const tagsBlock = draft.tags.length
+    ? `tags:\n${draft.tags.map((tag) => `  - ${JSON.stringify(tag)}`).join("\n")}`
     : "tags: []";
-
+  const coverLine = draft.cover ? `\ncover: ${JSON.stringify(draft.cover)}` : "";
   return [
     "---",
-    "title: " + title,
-    "description: " + description,
-    "date: " + today,
-    tagsBlock,
+    `title: ${yamlValue(draft.title || "未命名文章")}`,
+    `description: ${yamlValue(draft.description || "请填写摘要")}`,
+    `date: ${draft.date}`,
+    `${tagsBlock}${coverLine}`,
     "---",
     "",
-    bodyInput.value.trim(),
+    draft.body,
     "",
   ].join("\n");
 }
 
+function applyDraft(draft = {}) {
+  elements.title.value = draft.title || "我的新文章";
+  elements.slug.value = draft.slug || slugify(elements.title.value);
+  elements.description.value = draft.description || "用一句话说明这篇文章写什么。";
+  elements.date.value = draft.date || today();
+  elements.tags.value = Array.isArray(draft.tags) ? draft.tags.join(", ") : (draft.tags || "随笔, 想法");
+  elements.cover.value = draft.cover || "";
+  elements.body.value = draft.body || "## 从这里开始写\n\n你可以直接在网页里开始写作。";
+  slugWasEdited = Boolean(draft.slug);
+  updatePreview();
+}
+
 function updatePreview() {
-  previewTitle.textContent = titleInput.value.trim() || "未命名文章";
-  previewDescription.textContent = descriptionInput.value.trim() || "请填写摘要";
-  previewTags.textContent = tagsInput.value
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean)
-    .join(" / ") || "未分类";
-  previewBody.innerHTML = renderMarkdown(bodyInput.value);
-}
-
-[titleInput, descriptionInput, tagsInput, bodyInput].forEach((element) => {
-  element.addEventListener("input", updatePreview);
-});
-
-function unlockStudio(remember = true) {
-  gate.style.display = "none";
-  studioShell.classList.remove("is-locked");
-  if (remember) {
-    localStorage.setItem(STUDIO_STORAGE_KEY, "yes");
+  if (!slugWasEdited) elements.slug.value = slugify(elements.title.value);
+  const draft = getDraft();
+  elements.previewTitle.textContent = draft.title || "未命名文章";
+  elements.previewDescription.textContent = draft.description || "请填写摘要";
+  elements.previewDate.textContent = formatDate(draft.date);
+  elements.previewTags.textContent = draft.tags.join(" / ") || "未分类";
+  elements.previewBody.innerHTML = renderMarkdown(draft.body);
+  if (draft.cover) {
+    elements.previewCover.src = draft.cover;
+    elements.previewCover.hidden = false;
+  } else {
+    elements.previewCover.removeAttribute("src");
+    elements.previewCover.hidden = true;
   }
 }
 
-function handleGate() {
-  if (localStorage.getItem(STUDIO_STORAGE_KEY) === "yes") {
-    unlockStudio(false);
-    return;
-  }
+function setStatus(message, type = "info") {
+  elements.status.textContent = message;
+  elements.status.dataset.type = type;
+}
 
-  gateEnter.addEventListener("click", () => {
-    if (gatePassword.value === STUDIO_PASSWORD) {
-      unlockStudio(true);
+function setGateStatus(message, type = "info") {
+  elements.gateStatus.textContent = message;
+  elements.gateStatus.dataset.type = type;
+}
+
+async function request(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    headers: options.body instanceof FormData ? options.headers : { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options,
+  });
+  let data = {};
+  try {
+    data = await response.json();
+  } catch {
+    data = { error: `服务器返回了无法解析的响应（${response.status}）` };
+  }
+  if (!response.ok) throw new Error(data.error || `请求失败（${response.status}）`);
+  return data;
+}
+
+async function loadDraft() {
+  try {
+    const data = await request(api.draft);
+    if (data.draft) {
+      applyDraft(data.draft);
+      setStatus(`已读取云端草稿${data.updatedAt ? ` · ${new Date(data.updatedAt).toLocaleString("zh-CN")}` : ""}`);
+    } else {
+      applyDraft({ date: today() });
+      setStatus("还没有云端草稿，可以直接开始写作。");
+    }
+  } catch (error) {
+    applyDraft({ date: today() });
+    setStatus(error.message, "error");
+  }
+}
+
+async function unlockStudio() {
+  elements.gate.style.display = "none";
+  elements.shell.classList.remove("is-locked");
+  await loadDraft();
+}
+
+async function checkSession() {
+  try {
+    const data = await request(api.session);
+    if (data.authenticated) {
+      await unlockStudio();
       return;
     }
-    gatePassword.value = "";
-    gatePassword.placeholder = "口令不对，请重试";
-  });
-
-  gatePassword.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      gateEnter.click();
-    }
-  });
+    setGateStatus("请输入后台口令。");
+  } catch (error) {
+    setGateStatus(`${error.message}。请确认网站已部署到 Cloudflare Pages。`, "error");
+  }
 }
 
-copyButton.addEventListener("click", async () => {
-  const content = buildMarkdown();
-  await navigator.clipboard.writeText(content);
-  copyButton.textContent = "已复制";
-  setTimeout(() => {
-    copyButton.textContent = "复制 Markdown";
-  }, 1200);
-});
+async function login() {
+  if (requestInProgress) return;
+  requestInProgress = true;
+  elements.enter.disabled = true;
+  setGateStatus("正在验证…");
+  try {
+    await request(api.login, { method: "POST", body: JSON.stringify({ password: elements.password.value }) });
+    elements.password.value = "";
+    await unlockStudio();
+  } catch (error) {
+    setGateStatus(error.message, "error");
+  } finally {
+    requestInProgress = false;
+    elements.enter.disabled = false;
+  }
+}
 
-downloadButton.addEventListener("click", () => {
-  const content = buildMarkdown();
-  const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+async function saveDraft() {
+  setStatus("正在保存草稿…");
+  try {
+    const data = await request(api.draft, { method: "PUT", body: JSON.stringify(getDraft()) });
+    setStatus(`草稿已保存 · ${new Date(data.updatedAt).toLocaleString("zh-CN")}`, "success");
+  } catch (error) {
+    setStatus(error.message, "error");
+  }
+}
+
+async function uploadFiles(files, kind) {
+  if (!files.length) return;
+  setStatus(`正在上传 ${files.length} 张图片…`);
+  try {
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("kind", kind);
+      const data = await request(api.upload, { method: "POST", body: formData });
+      if (kind === "cover") {
+        elements.cover.value = data.url;
+      } else {
+        const markdown = `\n![${file.name.replace(/\.[^.]+$/, "")}](${data.url})\n`;
+        const start = elements.body.selectionStart ?? elements.body.value.length;
+        elements.body.setRangeText(markdown, start, elements.body.selectionEnd ?? start, "end");
+      }
+    }
+    updatePreview();
+    setStatus("图片已上传并插入文章。", "success");
+  } catch (error) {
+    setStatus(error.message, "error");
+  } finally {
+    elements.coverUpload.value = "";
+    elements.bodyUpload.value = "";
+  }
+}
+
+async function publishPost() {
+  const draft = getDraft();
+  if (!draft.title || !draft.description || !draft.body) {
+    setStatus("请先填写标题、摘要和正文。", "error");
+    return;
+  }
+  if (!window.confirm(`确定发布《${draft.title}》吗？发布后会提交到 GitHub 并触发自动部署。`)) return;
+
+  elements.publish.disabled = true;
+  setStatus("正在提交 GitHub…");
+  try {
+    const data = await request(api.publish, { method: "POST", body: JSON.stringify(draft) });
+    setStatus("发布提交成功，网站通常会在 1–3 分钟内更新。", "success");
+    if (data.articleUrl) {
+      const link = document.createElement("a");
+      link.href = data.articleUrl;
+      link.textContent = "打开文章";
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      elements.status.append(" ", link);
+    }
+  } catch (error) {
+    setStatus(error.message, "error");
+  } finally {
+    elements.publish.disabled = false;
+  }
+}
+
+function downloadMarkdown() {
+  const blob = new Blob([buildMarkdown()], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = slugify(titleInput.value) + ".md";
+  link.download = `${getDraft().slug}.md`;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-});
+}
 
-handleGate();
+[elements.title, elements.description, elements.date, elements.tags, elements.cover, elements.body].forEach((element) => {
+  element.addEventListener("input", updatePreview);
+});
+elements.slug.addEventListener("input", () => {
+  slugWasEdited = true;
+  elements.slug.value = slugify(elements.slug.value);
+});
+elements.enter.addEventListener("click", login);
+elements.password.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    login();
+  }
+});
+elements.logout.addEventListener("click", async () => {
+  await request(api.logout, { method: "POST", body: "{}" }).catch(() => {});
+  window.location.reload();
+});
+elements.save.addEventListener("click", saveDraft);
+elements.publish.addEventListener("click", publishPost);
+elements.coverUpload.addEventListener("change", () => uploadFiles([...elements.coverUpload.files], "cover"));
+elements.bodyUpload.addEventListener("change", () => uploadFiles([...elements.bodyUpload.files], "body"));
+elements.copy.addEventListener("click", async () => {
+  await navigator.clipboard.writeText(buildMarkdown());
+  setStatus("Markdown 已复制。", "success");
+});
+elements.download.addEventListener("click", downloadMarkdown);
+
+elements.date.value = today();
 updatePreview();
+checkSession();

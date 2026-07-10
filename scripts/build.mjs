@@ -11,6 +11,7 @@ const studioScriptPath = path.join(root, "templates", "studio.js");
 const viewsScriptPath = path.join(root, "templates", "views.js");
 const avatarPlaceholderPath = path.join(root, "templates", "avatar-placeholder.svg");
 const avatarImagePath = path.join(root, "templates", "avatar.png");
+const publicDir = path.join(root, "public");
 const basePath = process.env.SITE_BASE_PATH || "/";
 
 const site = {
@@ -59,6 +60,11 @@ function withBase(pathname) {
     return siteBase;
   }
   return `${siteBase}${pathname.slice(1)}`;
+}
+
+function contentUrl(value) {
+  if (String(value).startsWith("/")) return withBase(String(value));
+  return String(value);
 }
 
 async function ensureCleanDir(dir) {
@@ -132,11 +138,32 @@ function parseFrontmatter(raw) {
 }
 
 function renderInline(text) {
-  let html = escapeHtml(text);
+  const tokens = [];
+  const reserve = (html) => {
+    const token = `@@HTML_TOKEN_${tokens.length}@@`;
+    tokens.push(html);
+    return token;
+  };
+
+  let source = text.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, url) => {
+    const safeUrl = /^(?:https?:\/\/|\/)/i.test(url) ? url : "";
+    if (!safeUrl) return alt;
+    return reserve(`<img src="${escapeHtml(contentUrl(safeUrl))}" alt="${escapeHtml(alt)}" loading="lazy" />`);
+  });
+
+  source = source.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, url) => {
+    const safeUrl = /^(?:https?:\/\/|mailto:|\/|#)/i.test(url) ? url : "#";
+    const external = /^https?:\/\//i.test(safeUrl) ? ' target="_blank" rel="noreferrer"' : "";
+    return reserve(`<a href="${escapeHtml(contentUrl(safeUrl))}"${external}>${escapeHtml(label)}</a>`);
+  });
+
+  let html = escapeHtml(source);
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
   html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  tokens.forEach((tokenHtml, index) => {
+    html = html.replace(`@@HTML_TOKEN_${index}@@`, tokenHtml);
+  });
   return html;
 }
 
@@ -309,11 +336,19 @@ async function loadPosts() {
     const fullPath = path.join(contentDir, entry.name);
     const raw = await fs.readFile(fullPath, "utf8");
     const { meta, body } = parseFrontmatter(raw);
-    const title = meta.title;
-    const description = meta.description;
+    const unquote = (value) => {
+      const text = String(value || "").trim();
+      if (text.startsWith('"') && text.endsWith('"')) {
+        try { return JSON.parse(text); } catch { return text.slice(1, -1); }
+      }
+      return text;
+    };
+    const title = unquote(meta.title);
+    const description = unquote(meta.description);
     const date = meta.date;
+    const cover = unquote(meta.cover);
     const tags = Array.isArray(meta.tags)
-      ? meta.tags.map((tag) => String(tag).trim()).filter(Boolean)
+      ? meta.tags.map((tag) => unquote(tag)).filter(Boolean)
       : String(meta.tags || "")
           .split(",")
           .map((tag) => tag.trim())
@@ -329,6 +364,7 @@ async function loadPosts() {
       title,
       description,
       date,
+      cover,
       tags,
       bodyHtml: renderMarkdown(body),
     });
@@ -366,6 +402,7 @@ function renderHome(posts) {
   const cards = posts
     .map(
       (post) => `<a class="post-card" href="${withBase(`/posts/${post.slug}/`)}">
+  ${post.cover ? `<img class="post-card-cover" src="${escapeHtml(contentUrl(post.cover))}" alt="${escapeHtml(post.title)}" loading="lazy" />` : ""}
   ${
     post.tags.length > 0
       ? `<div class="post-card-meta">
@@ -430,6 +467,7 @@ function renderHome(posts) {
 </section>
 
 <section class="featured-card">
+  ${featured?.cover ? `<img class="featured-cover" src="${escapeHtml(contentUrl(featured.cover))}" alt="${escapeHtml(featured.title)}" />` : ""}
   <p class="eyebrow">Featured</p>
   <h2>${escapeHtml(featured?.title || site.title)}</h2>
   <p>${escapeHtml(featured?.description || "等你发布第一篇文章后，这里会自动成为重点推荐。")}</p>
@@ -489,6 +527,7 @@ function renderPost(post) {
       <span class="view-pill" data-view-count data-view-slug="${escapeHtml(post.slug)}">浏览 0</span>
     </div>
   </header>
+  ${post.cover ? `<img class="article-cover" src="${escapeHtml(contentUrl(post.cover))}" alt="${escapeHtml(post.title)}" />` : ""}
   <div class="article-content">
     ${post.bodyHtml}
   </div>
@@ -596,44 +635,76 @@ function renderTagPage(tag) {
 function renderStudio() {
   return createLayout({
     title: `写作台 | ${site.title}`,
-    description: "在网页里直接写文章、实时预览，并导出 Markdown 模板。",
+    description: "登录私人写作后台，保存草稿、上传图片并一键发布文章。",
     content: `<section class="admin-gate" id="admin-gate">
   <div class="admin-gate-card">
     <p class="eyebrow">Private Studio</p>
     <h1>写作后台</h1>
-    <p class="hero-copy">这是你的私人写作入口。输入口令后才能进入写作台。</p>
+    <p class="hero-copy">登录验证由服务器完成，口令和 GitHub 密钥不会出现在网页源码中。</p>
     <label class="studio-field">
       <span>后台口令</span>
-      <input id="gate-password" type="password" placeholder="请输入后台口令" />
+      <input id="gate-password" type="password" autocomplete="current-password" placeholder="请输入后台口令" />
     </label>
     <div class="studio-actions">
       <button class="button button-primary" type="button" id="gate-enter">进入后台</button>
     </div>
-    <p class="studio-hint">当前是轻量保护版本，适合隐藏后台入口，不等于真正服务端安全认证。</p>
+    <p class="studio-status" id="gate-status" role="status">正在检查登录状态…</p>
   </div>
 </section>
 
 <section class="studio-shell is-locked" id="studio-shell">
 <section class="page-hero">
-  <p class="eyebrow">Writing Studio</p>
-  <h1>在网页里直接开始写。</h1>
-  <p class="hero-copy">你可以先在这里写标题、摘要、标签和正文，右侧会实时预览文章效果，还可以一键导出 Markdown 文件内容。</p>
+  <div class="studio-heading-row">
+    <div>
+      <p class="eyebrow">Writing Studio</p>
+      <h1>在线写作与发布</h1>
+      <p class="hero-copy">草稿保存在 Cloudflare KV；发布时自动提交 GitHub，并触发网站重新部署。</p>
+    </div>
+    <button class="button button-secondary" type="button" id="studio-logout">退出登录</button>
+  </div>
 </section>
 
 <section class="studio-layout">
   <form class="studio-panel" id="studio-form">
-    <label class="studio-field">
-      <span>文章标题</span>
-      <input id="studio-title" type="text" value="我的新文章" />
-    </label>
+    <div class="studio-field-grid">
+      <label class="studio-field">
+        <span>文章标题</span>
+        <input id="studio-title" type="text" value="我的新文章" maxlength="120" />
+      </label>
+      <label class="studio-field">
+        <span>文章地址 Slug</span>
+        <input id="studio-slug" type="text" placeholder="my-new-post" maxlength="100" />
+      </label>
+    </div>
     <label class="studio-field">
       <span>一句摘要</span>
-      <input id="studio-description" type="text" value="用一句话说明这篇文章写什么。" />
+      <input id="studio-description" type="text" value="用一句话说明这篇文章写什么。" maxlength="240" />
     </label>
+    <div class="studio-field-grid">
+      <label class="studio-field">
+        <span>发布日期</span>
+        <input id="studio-date" type="date" />
+      </label>
+      <label class="studio-field">
+        <span>标签（逗号分隔）</span>
+        <input id="studio-tags" type="text" value="随笔, 想法" />
+      </label>
+    </div>
     <label class="studio-field">
-      <span>标签</span>
-      <input id="studio-tags" type="text" value="随笔, 想法" />
+      <span>封面图片地址</span>
+      <input id="studio-cover" type="text" placeholder="上传封面后自动填写" />
     </label>
+    <div class="studio-upload-row">
+      <label class="upload-button">
+        <span>上传封面</span>
+        <input id="cover-upload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" />
+      </label>
+      <label class="upload-button">
+        <span>上传正文图片</span>
+        <input id="body-upload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+      </label>
+      <span class="studio-hint">单张不超过 5 MB，上传后保存到 GitHub。</span>
+    </div>
     <label class="studio-field">
       <span>正文</span>
       <textarea id="studio-body" rows="18">## 从这里开始写
@@ -650,10 +721,12 @@ function renderStudio() {
 </textarea>
     </label>
     <div class="studio-actions">
-      <button class="button button-primary" type="button" id="copy-markdown">复制 Markdown</button>
+      <button class="button button-secondary" type="button" id="save-draft">保存草稿</button>
+      <button class="button button-secondary" type="button" id="copy-markdown">复制 Markdown</button>
       <button class="button button-secondary" type="button" id="download-markdown">下载 .md 文件</button>
+      <button class="button button-primary" type="button" id="publish-post">一键发布</button>
     </div>
-    <p class="studio-hint">提示：这个版本是前端写作台，适合起草和导出。真正一键发布到线上，我们下一步可以接 GitHub 发布接口。</p>
+    <p class="studio-status" id="studio-status" role="status">登录后会自动读取云端草稿。</p>
   </form>
 
   <section class="studio-preview-card">
@@ -666,6 +739,7 @@ function renderStudio() {
         <span id="preview-tags">随笔 / 想法</span>
       </div>
     </div>
+    <img class="studio-cover-preview" id="preview-cover" alt="文章封面预览" hidden />
     <div class="article-content" id="preview-body"></div>
   </section>
 </section>
@@ -677,6 +751,11 @@ function renderStudio() {
 
 async function main() {
   await ensureCleanDir(distDir);
+  try {
+    await fs.cp(publicDir, distDir, { recursive: true });
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
   await fs.mkdir(postsDir, { recursive: true });
   await fs.mkdir(tagsDir, { recursive: true });
   const css = await fs.readFile(templateCssPath, "utf8");

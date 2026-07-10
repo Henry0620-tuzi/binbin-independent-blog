@@ -1,6 +1,17 @@
-# 独立写作站
+# 彬彬的独立博客
 
-这是一个零依赖的个人独立文章站，适合长期发布自己的内容。
+一个零依赖的中文独立文章站，包含静态文章生成、Cloudflare 私人写作后台、GitHub 自动提交和自动部署。
+
+## 已实现功能
+
+- Markdown 文章与标签页生成
+- 私人后台服务端登录
+- Cloudflare KV 云端草稿
+- 实时 Markdown 预览
+- 封面和正文图片上传
+- 一键提交文章到 GitHub
+- Cloudflare Pages 自动部署
+- GitHub Actions 自动更新 `gh-pages`
 
 ## 本地启动
 
@@ -9,99 +20,108 @@ npm run build
 npm run dev
 ```
 
-然后打开 `http://localhost:4321`。
+打开 `http://localhost:4321`。静态页面可以本地预览，但 `/api/studio/*` 服务端接口需要 Cloudflare Pages Functions 环境。
 
-## 如何发布新文章
+## 文章格式
 
-在 `content/posts/` 下新增一个 Markdown 文件，例如 `my-post.md`：
+文章保存在 `content/posts/`：
 
 ```md
 ---
 title: 我的第一篇文章
-description: 一句摘要
-date: 2026-05-25
+description: 一句话摘要
+date: 2026-07-10
 tags:
   - 随笔
   - 技术
+cover: /uploads/covers/example.webp
 ---
 
 这里写正文。
+
+![正文图片](/uploads/posts/example.webp)
 ```
 
-## 站点页面
+## Cloudflare Pages 正式部署
 
-- `/` 首页
-- `/about/` 关于页
-- `/tags/` 标签页
-- `/posts/文章名/` 文章页
-- `/studio/` 私人写作后台入口
+请创建一个新的 Pages 项目，例如 `binbin-independent-blog`。不要使用 `wenzhang.pages.dev`，该地址目前属于另一个“文章爬取工具”项目。
 
-## 优先部署到 Cloudflare Pages
+连接仓库 `Henry0620-tuzi/wenzhang`，配置：
 
-推荐优先使用 Cloudflare Pages 托管这个项目。
-
-### Cloudflare Pages 配置
-
-- Repository: `Henry0620-tuzi/wenzhang`
-- Production branch: `main`
-- Framework preset: `None`
-- Build command: `npm run build`
-- Build output directory: `dist`
-- Root directory: 留空
-
-### Cloudflare Pages 环境变量
-
-默认不需要设置环境变量。
-
-重点：
-
-- Cloudflare Pages 下不要设置 `SITE_BASE_PATH=/wenzhang/`
-- Cloudflare Pages 应该直接使用根路径 `/`
-
-也就是说，在 Cloudflare Pages 里：
-
-```bash
-npm run build
+```txt
+Production branch: main
+Framework preset: None
+Build command: npm run build
+Build output directory: dist
+Root directory: 留空
 ```
 
-就够了。
+不要在 Cloudflare 设置 `SITE_BASE_PATH=/wenzhang/`，Cloudflare 使用根路径 `/`。
 
-## GitHub Pages 说明
+### 必填环境变量
 
-这个项目也兼容 GitHub Pages，但需要子路径部署。
+```txt
+SITE_URL=https://你的-pages-地址或正式域名
+STUDIO_PASSWORD=你的后台登录口令
+STUDIO_SESSION_SECRET=至少32位的随机字符串
+GITHUB_TOKEN=GitHub Fine-grained Personal Access Token
+GITHUB_OWNER=Henry0620-tuzi
+GITHUB_REPO=wenzhang
+GITHUB_BRANCH=main
+```
 
-如果部署到 GitHub Pages：
+GitHub Token 仅授权仓库 `Henry0620-tuzi/wenzhang`，权限至少包含：
+
+- Contents: Read and write
+- Metadata: Read
+
+### KV 草稿绑定
+
+在 Cloudflare 创建 KV namespace，例如 `wenzhang-studio-drafts`，然后在 Pages 项目中绑定：
+
+```txt
+Variable name: STUDIO_DRAFTS
+KV namespace: wenzhang-studio-drafts
+```
+
+保存变量和 KV 后，重新部署一次。
+
+## 后台发布流程
+
+打开：
+
+```txt
+https://你的正式站点/studio/
+```
+
+1. 输入 `STUDIO_PASSWORD`
+2. 在线写标题、摘要、日期、标签和正文
+3. 点击“保存草稿”写入 Cloudflare KV
+4. 上传封面或正文图片，图片会提交到 `public/uploads/`
+5. 点击“一键发布”
+6. 后台提交 `content/posts/<slug>.md` 到 GitHub `main`
+7. Cloudflare Pages 自动部署新版本
+8. GitHub Actions 自动构建并更新 `gh-pages`
+
+## GitHub Pages 镜像
+
+当前公开镜像：
+
+`https://henry0620-tuzi.github.io/wenzhang/`
+
+`.github/workflows/deploy-pages.yml` 会在 `main` 更新后自动执行：
 
 ```bash
 SITE_BASE_PATH=/wenzhang/ npm run build
 ```
 
-因为 GitHub Pages 对应的访问地址是：
+GitHub Pages 不支持 Pages Functions，因此它的 `/studio/` 只能显示后台界面，不能完成登录与发布。请使用 Cloudflare Pages 地址进入后台。
 
-`https://henry0620-tuzi.github.io/wenzhang/`
+## 安全说明
 
-## 自定义域名
-
-如果你用 Cloudflare Pages，再绑定自己的域名会更顺。
-
-步骤一般是：
-
-1. 在 Cloudflare Pages 项目里打开 `Custom domains`
-2. 添加你的域名
-3. 按提示完成 DNS 配置
-4. 等待生效
-
-## 推荐顺序
-
-建议这样走：
-
-1. 先在 Cloudflare Pages 跑通正式部署
-2. 再接自己的域名
-3. 最后继续完善作者信息、二维码和发布后台
-
-## 下一步可升级
-
-- 把 X 链接替换成你的真实主页
-- 把二维码展示位替换成真实二维码图片
-- 接入真正安全的后台登录
-- 接入一键发布文章能力
+- 后台口令和 GitHub Token 只存 Cloudflare 环境变量
+- 登录使用签名的 HttpOnly、SameSite Cookie
+- 同一 IP 连续登录失败 5 次后会暂时锁定 15 分钟
+- 浏览器源码中不再包含后台口令
+- 图片限制为 JPG、PNG、WebP、GIF，单张最多 5 MB
+- 不要把 `.dev.vars`、Token 或真实口令提交到 GitHub

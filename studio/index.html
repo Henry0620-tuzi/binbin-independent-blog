@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="登录私人写作后台，保存草稿、上传图片并一键发布文章。" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;700;800&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/binbin-independent-blog/site.css" />
+    <script defer src="/binbin-independent-blog/views.js"></script>
+    <title>写作台 | 彬彬的独立博客</title>
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="page-glow page-glow-left"></div>
+      <div class="page-glow page-glow-right"></div>
+      <main class="site-frame">
+        <header class="topbar">
+          <a class="brand" href="/binbin-independent-blog/">
+            <span class="brand-mark">彬彬</span>
+            <span class="brand-copy">
+              <strong>彬彬的独立博客</strong>
+              <small>独立写作者</small>
+            </span>
+          </a>
+          <nav class="topnav" aria-label="主导航">
+            <a href="/binbin-independent-blog/">首页</a><a href="/binbin-independent-blog/#posts">文章</a><a href="/binbin-independent-blog/tags/">分类</a><a href="https://x.com/" target="_blank" rel="noreferrer">X</a><a href="https://github.com/Henry0620-tuzi/binbin-independent-blog" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="/binbin-independent-blog/about/">关于</a>
+            <a class="nav-avatar" href="/binbin-independent-blog/about/" aria-label="头像入口">
+              <img src="/binbin-independent-blog/avatar.png" alt="彬彬 的头像" />
+            </a>
+          </nav>
+        </header>
+        <section class="admin-gate" id="admin-gate">
+  <div class="admin-gate-card">
+    <p class="eyebrow">Private Studio</p>
+    <h1>写作后台</h1>
+    <p class="hero-copy">登录验证由服务器完成，口令和 GitHub 密钥不会出现在网页源码中。</p>
+    <label class="studio-field">
+      <span>后台口令</span>
+      <input id="gate-password" type="password" autocomplete="current-password" placeholder="请输入后台口令" />
+    </label>
+    <div class="studio-actions">
+      <button class="button button-primary" type="button" id="gate-enter">进入后台</button>
+    </div>
+    <p class="studio-status" id="gate-status" role="status">正在检查登录状态…</p>
+  </div>
+</section>
+
+<section class="studio-shell is-locked" id="studio-shell">
+<section class="page-hero">
+  <div class="studio-heading-row">
+    <div>
+      <p class="eyebrow">Writing Studio</p>
+      <h1>在线写作与发布</h1>
+      <p class="hero-copy">草稿保存在 Cloudflare KV；发布时自动提交 GitHub，并触发网站重新部署。</p>
+    </div>
+    <button class="button button-secondary" type="button" id="studio-logout">退出登录</button>
+  </div>
+</section>
+
+<section class="studio-layout">
+  <form class="studio-panel" id="studio-form">
+    <div class="studio-field-grid">
+      <label class="studio-field">
+        <span>文章标题</span>
+        <input id="studio-title" type="text" value="我的新文章" maxlength="120" />
+      </label>
+      <label class="studio-field">
+        <span>文章地址 Slug</span>
+        <input id="studio-slug" type="text" placeholder="my-new-post" maxlength="100" />
+      </label>
+    </div>
+    <label class="studio-field">
+      <span>一句摘要</span>
+      <input id="studio-description" type="text" value="用一句话说明这篇文章写什么。" maxlength="240" />
+    </label>
+    <div class="studio-field-grid">
+      <label class="studio-field">
+        <span>发布日期</span>
+        <input id="studio-date" type="date" />
+      </label>
+      <label class="studio-field">
+        <span>标签（逗号分隔）</span>
+        <input id="studio-tags" type="text" value="随笔, 想法" />
+      </label>
+    </div>
+    <label class="studio-field">
+      <span>封面图片地址</span>
+      <input id="studio-cover" type="text" placeholder="上传封面后自动填写" />
+    </label>
+    <div class="studio-upload-row">
+      <label class="upload-button">
+        <span>上传封面</span>
+        <input id="cover-upload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" />
+      </label>
+      <label class="upload-button">
+        <span>上传正文图片</span>
+        <input id="body-upload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+      </label>
+      <span class="studio-hint">单张不超过 5 MB，上传后保存到 GitHub。</span>
+    </div>
+    <label class="studio-field">
+      <span>正文</span>
+      <textarea id="studio-body" rows="18">## 从这里开始写
+
+你可以直接在网页里先起草内容。
+
+- 支持标题
+- 支持列表
+- 支持代码块
+
+```md
+这是一段示例代码
+```
+</textarea>
+    </label>
+    <div class="studio-actions">
+      <button class="button button-secondary" type="button" id="save-draft">保存草稿</button>
+      <button class="button button-secondary" type="button" id="copy-markdown">复制 Markdown</button>
+      <button class="button button-secondary" type="button" id="download-markdown">下载 .md 文件</button>
+      <button class="button button-primary" type="button" id="publish-post">一键发布</button>
+    </div>
+    <p class="studio-status" id="studio-status" role="status">登录后会自动读取云端草稿。</p>
+  </form>
+
+  <section class="studio-preview-card">
+    <div class="studio-preview-head">
+      <p class="eyebrow">Live Preview</p>
+      <h2 id="preview-title">我的新文章</h2>
+      <p id="preview-description">用一句话说明这篇文章写什么。</p>
+      <div class="article-meta">
+        <time id="preview-date">2026年7月10日</time>
+        <span id="preview-tags">随笔 / 想法</span>
+      </div>
+    </div>
+    <img class="studio-cover-preview" id="preview-cover" alt="文章封面预览" hidden />
+    <div class="article-content" id="preview-body"></div>
+  </section>
+</section>
+</section>
+
+<script src="/binbin-independent-blog/studio.js"></script>
+        <footer class="site-footer">
+          <p>把文章、思考和项目都放在自己的地盘上，不依赖平台分发。</p>
+          <p>联系我：<a href="mailto:q343553497@gmail.com">q343553497@gmail.com</a></p>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
